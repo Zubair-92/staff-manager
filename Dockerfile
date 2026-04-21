@@ -18,9 +18,11 @@ RUN npm install --legacy-peer-deps && npm run build
 COPY ./docker/nginx.conf /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public
+# --- THE FIX: Create SQLite file and set permissions ---
+RUN touch /var/www/database/database.sqlite
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/database /var/www/public
+RUN chmod -R 775 /var/www/storage /var/www/database
 
 EXPOSE 80
 
-# Run migrations and then start services
 CMD php artisan migrate --force && service nginx start && php-fpm
