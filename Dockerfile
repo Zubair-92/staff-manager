@@ -18,11 +18,13 @@ RUN npm install --legacy-peer-deps && npm run build
 COPY ./docker/nginx.conf /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-# --- THE FIX: Create SQLite file and set permissions ---
 RUN touch /var/www/database/database.sqlite
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/database /var/www/public
 RUN chmod -R 775 /var/www/storage /var/www/database
 
 EXPOSE 80
 
-CMD php artisan migrate --force && service nginx start && php-fpm
+# Run migrations and auto-create the admin user
+CMD php artisan migrate --force && \
+    php artisan tinker --execute="if(!App\Models\User::where('email', 'admin@staff.com')->exists()) App\Models\User::create(['name'=>'Admin','email'=>'admin@staff.com','password'=>bcrypt('password123')]);" && \
+    service nginx start && php-fpm
